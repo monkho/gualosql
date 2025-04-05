@@ -1,0 +1,69 @@
+crea la base de datos ogh
+
+crea la tabla mitabla
+  con campos
+    nombre en texto
+    edad en numero
+    fechaNacimiento en fecha
+    reloj en tiempo
+termina la tabla
+
+crea la tabla otra
+  con campos
+    otroNombre en texto
+    otraEdad en numero
+referenciado con mitabla
+termina la tabla
+
+inserta en la tabla mitabla
+  nombre con valor 'Obed'
+  edad con valor 21
+  fechaNacimiento con valor 2003-09-14
+  reloj con valor 15:00:00
+  ast con valor 'oiets'
+termina la insercion
+
+inserta en la tabla otra
+  otroNombre con valor 'outdoor',
+  otraEdad con valor 10
+termina la insercion
+
+selecciona todo de la tabla mitabla
+
+selecciona nombre edad de la tabla mitabla cuando el campo edad sea menor o igual a 19
+
+selecciona todo entre mitabla y otra
+
+borra de la tabla mitabla cuando el campo nombre sea igual a 'Obed'
+
+modifica de la tabla mitabla
+  nombre con 'OGH',
+  ast con 1,
+  oen con 1010-10-10
+cuando el campo edad sea igual a 21
+
+termina la base de datos ogh
+
+
+crea la base de datos bd1
+
+crea la tabla airestnoair
+  con campos
+    algo en texto
+termina la tabla
+
+inserta en la tabla airestnoair
+  algo con valor 1
+termina la insercion
+
+inserta en la tabla airestnoair
+  algo con valor 5
+termina la insercion
+
+selecciona campo1, campo2 de la tabla ars
+
+selecciona o1, o2, o3, o3 entre oien y arst
+
+borra la tabla airestnoair
+
+termina la base de datos bd1
