@@ -7,7 +7,6 @@ public class BDCampo {
   private String nombreCampo;
   private String nombreTipo;
   private List<String> valores;
-  private int contador;
 
   public BDCampo() {
     nombreCampo = "";

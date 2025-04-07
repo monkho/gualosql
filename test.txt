@@ -1,0 +1,42 @@
+crea la base de datos ogh3
+
+crea la tabla pc
+con campos 
+	nombre en texto, 
+	pantalla en numero
+termina la tabla
+
+inserta en la tabla pc
+	nombre con valor 'Dell Inspiron',
+	pantalla con valor 14
+termina la insercion
+
+crea la tabla carro
+con campos
+	caballos en numero
+	nombre en texto
+	modelo en fecha
+	hora en tiempo
+referenciado con pc
+termina la tabla
+
+crea la tabla carro
+con campos
+	caballos en numero
+	nombre en texto
+	modelo en fecha
+	hora en tiempo
+referenciado con pc
+termina la tabla
+
+inserta en la tabla carro 
+	nombre con 'mazda',
+	caballos con 100,
+	modelo con '2020-20-02',
+	modelo con '00:00:00',
+	fk_id_pc con 1
+termina la insercion
+
+selecciona todo entre pc y carro
+
+termina la base de datos ogh3

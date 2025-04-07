@@ -40,6 +40,15 @@ public class BaseDatos {
   public List<BDTabla> getTablas() {
     return tablas;
   }
+  
+  public boolean tablaDup(String t) {
+	  boolean r = false;
+	  for(BDTabla tb: tablas) {
+		  if(tb.getNombreTabla().equals(t)) 
+			  r = true;
+	  }
+	  return r;
+  }
 
   public BDTabla getTabla(String nombre) {
     for (BDTabla t : tablas) {

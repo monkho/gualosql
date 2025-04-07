@@ -12,7 +12,7 @@ HashMap baseDatos = new HashMap();
 BaseDatos baseDatosActual;
 BDTabla tablaActual;
 List<String> camposActuales = new ArrayList<>();
-List<String> valores = new ArrayList<>();
+List<String> valoresActuales = new ArrayList<>();
 String query = "";
 List<String> compiled = new ArrayList<>();
 List<String> errors = new ArrayList<>();
@@ -59,7 +59,7 @@ public void removeTabla(String tabla, BaseDatos db) {
 public void pushTabla(BaseDatos currdb, BDTabla t) {
     BaseDatos db = findDB(currdb.getNombreDB());
     if(db!=null) {
-        if(db.getTablas().contains(t)) {
+        if(db.tablaDup(t.getNombreTabla() ) ) {
             errors.add("Tabla: " + t.getNombreTabla() + " ya existe en la base de datos: " + db.getNombreDB());
             System.out.println("Tabla: " + t.getNombreTabla() + " ya existe en la base de datos: " + db.getNombreDB());
             error = true;
@@ -107,16 +107,28 @@ public void printQuery(String query) {
 
 public String getCampos(List<String> campos) {
     String res = "";
-    for(String c : campos)
-        res += c + ',';
-    res += '\b';
+    for(int i=0; i<campos.size(); i++) {
+        if(i == campos.size() - 1) {
+            System.out.println("Last element of campos, so it dont need comma: " + campos.get(i));
+            res += campos.get(i);
+        } else {
+            res += campos.get(i) + ',';
+        }
+    }
     return res;
 }
 public String getValores(List<String> valores) {
     String res = "";
-    for(String c : valores)
-        res += c + ',';
-    res += '\b';
+    for(int i=0; i<valores.size(); i++) {
+//        if(i == valores.size() - 1) {
+//            System.out.println("Last element of valores, so it dont need comma: " + valores.get(i));
+//            res += valores.get(i);
+//        } else {
+//            res += valores.get(i) + ',';
+//        }
+        
+        res += valores.get(i) + ',';
+    }
     return res;
 }
 
@@ -134,6 +146,11 @@ public String getErrors() {
         r += s + '\n';
     }
     return r;
+}
+
+public String rmComma(String query) {
+    int li = query.lastIndexOf(",");
+    return query.substring(0, li) + query.substring(li+1, query.length()-1);
 }
 }
 
@@ -174,8 +191,9 @@ createbaseDatostmt
         baseDatosActual = new BaseDatos($IDENTIFIER.text);
         pushDB($IDENTIFIER.text, baseDatosActual);
         if(!error) {
-            query += "CREATE DATABASE " + $IDENTIFIER.text + ';' + '\n';
-            query += "USE DATABASE " + $IDENTIFIER.text + ";\n";
+            query += "-- =====================\n-- Create and use Database: " + $IDENTIFIER.text + "\n";
+            query += "CREATE DATABASE IF NOT EXISTS " + $IDENTIFIER.text + ';' + '\n';
+//            query += "USE DATABASE " + $IDENTIFIER.text + ";\n";
             printQuery(query);
             compiled.add(query);
             query = "";
@@ -201,23 +219,24 @@ createTableStmt
       fieldList
       {
         if(!error) {
-            query += "CREATE TABLE " + $IDENTIFIER.text + "(\n"
-                + "id_" + $IDENTIFIER.text + " PRIMARY KEY AUTOINCREMENT INT NOT NULL,\n";
+            query += "-- =====================\n-- Create Table: " + $IDENTIFIER.text + "\n";
+            query += "CREATE TABLE IF NOT EXISTS " + $IDENTIFIER.text + "(\n"
+                + "id_" + $IDENTIFIER.text + " INT NOT NULL AUTO_INCREMENT PRIMARY KEY,\n";
             for(BDCampo c : tablaActual.getCampos()) {
                 String tipo = c.getNombreTipo();
                 String nombre = c.getNombreCampo();
                 switch(tipo) {
                     case "texto":
-                        query += nombre + " TEXT, ";
+                        query += nombre + " TEXT,";
                         break;
                     case "numero":
-                        query += nombre + " INT, ";
+                        query += nombre + " INT,";
                         break;
                     case "fecha":
-                        query += nombre + " DATE, ";
+                        query += nombre + " DATE,";
                         break;
                     case "tiempo":
-                        query += nombre + " TIME, ";
+                        query += nombre + " TIME,";
                         break;
                 }
             }
@@ -233,10 +252,10 @@ createTableStmt
       'termina' 'la' 'tabla' NEWLINE
       {
         if(!error) {
-            if(query.charAt(query.length()-1) == ',' || query.charAt(query.length()-2) == ',')
-                query += "\b\b\b);\n";
-            else
-                query += ");\n";
+            int li = query.lastIndexOf(",");
+            query = query.substring(0, query.length()-1);
+            query += ");";
+
             printQuery(query);
             compiled.add(query);
             query = "";
@@ -265,9 +284,9 @@ foreignRef returns [String fk]
         BDTabla t = findTabla($IDENTIFIER.text, baseDatosActual);
         String type = "";
         if(t != null) {
-            type = "INT, FOREIGN KEY (fk_"+t.getIdTabla()+") REFERENCES " + t.getNombreTabla() + "("+t.getIdTabla()+") ON DELETE CASCADE";
+            type = " INT, FOREIGN KEY (fk_"+t.getIdTabla()+") REFERENCES " + t.getNombreTabla() + "("+t.getIdTabla()+") ON DELETE CASCADE,";
             tablaActual.addCampo(new BDCampo("fk_" + t.getIdTabla(), type));
-            $fk = "fk_" + t.getIdTabla() + " " + type;
+            $fk = "fk_" + t.getIdTabla() + type;
         }
     }
     ;
@@ -282,14 +301,17 @@ insertStmt
       'termina' 'la' 'insercion' NEWLINE
       {
         if(!error) {
-            query += "INSERT INTO " + $IDENTIFIER.text + "(" + getCampos(camposActuales) + ") \nVALUES(" + getValores(valores) + ");\n";
+            query += "-- =====================\n-- Insert Table: " + $IDENTIFIER.text + "\n";
+            String v = getValores(valoresActuales);
+            v = v.substring(0, v.length()-1);
+            query += "INSERT INTO " + $IDENTIFIER.text + " (" + getCampos(camposActuales) + ") \nVALUES(" + v + ");";
             printQuery(query);
             compiled.add(query);
             query = "";
         }
         error = false;
         camposActuales = new ArrayList<>();
-        valores = new ArrayList<>();
+        valoresActuales = new ArrayList<>();
       }
     ;
 
@@ -302,7 +324,7 @@ insertField returns [BDCampo campo]
     : IDENTIFIER 'con' 'valor' literal (',')?
     {
         camposActuales.add($IDENTIFIER.text);
-        valores.add($literal.t);
+        valoresActuales.add($literal.t);
         $campo = findCampo($IDENTIFIER.text, tablaActual);
         if($campo != null) {
             $campo.addValor($literal.t);
@@ -315,6 +337,7 @@ insertField returns [BDCampo campo]
 selectStmt
     : 'selecciona' selectFields
     {
+            query += "-- =====================\n-- Select Table: \n";
         if(!error) {
             if($selectFields.t != null){
                 query += "SELECT * FROM ";
@@ -384,8 +407,9 @@ selectFrom returns [List<BDTabla> tabla]
         BDTabla t1 = findTabla($id1.text, baseDatosActual);
         BDTabla t2 = findTabla($id2.text, baseDatosActual);
         for(String c : camposActuales) {
-            findCampo(c, t1);
-            findCampo(c, t2);
+            BDCampo c1 = findCampo(c, t1);
+            BDCampo c2 = findCampo(c, t2);
+            if(c1 != null || c2 != null) error = false;
         }
         $tabla = new ArrayList();
         $tabla.add(t1);
@@ -425,6 +449,7 @@ deleteStmt
     {
         tablaActual = findTabla($IDENTIFIER.text, baseDatosActual);
         if(!error) {
+            query += "-- =====================\n-- Delete from Table: " + $IDENTIFIER.text + "\n";
             query += "DELETE FROM " + $IDENTIFIER.text + " WHERE " + $whereClause.c + " " + $whereClause.cond + " " + $whereClause.v + ";\n";
             printQuery(query);
             compiled.add(query);
@@ -439,6 +464,7 @@ deleteTableStmt
     {
         removeTabla($tabla.text, baseDatosActual);
         if(!error) {
+            query += "-- =====================\n-- Drop Table: " + $tabla.text + "\n";
             query += "DROP TABLE IF EXISTS " + $tabla.text + ";\n";
             printQuery(query);
             query = "";
@@ -451,6 +477,7 @@ deleteDBStmt
     {
         removeDB($IDENTIFIER.text);
         if(!error) {
+            query += "-- =====================\n-- Drop Database: " + $IDENTIFIER.text + "\n";
             query += "DROP DATABASE IF EXISTS " + $IDENTIFIER.text + ";\n";
             printQuery(query);
             compiled.add(query);
@@ -485,7 +512,7 @@ updateField returns [BDCampo campo]
 // -----------------------------------------------------------------------------
 // terminar bd
 finishDB
-    : 'termina' 'la' 'base' 'de' 'datos' IDENTIFIER NEWLINE
+    : 'termina' 'la' 'base' 'de' 'datos' IDENTIFIER NEWLINE?
     {
         if(findDB($IDENTIFIER.text) == baseDatosActual)
             baseDatosActual = null;
@@ -528,8 +555,8 @@ TIEMPO: 'tiempo';
 
 // -----------------------------------------------------------------------------
 // Reglas para fecha y hora
-DATE: DIGIT DIGIT DIGIT DIGIT '-' DIGIT DIGIT '-' DIGIT DIGIT;   // YYYY-MM-DD
-TIME: DIGIT DIGIT ':' DIGIT DIGIT ':' DIGIT DIGIT;                // HH:MM:SS
+DATE: '\'' DIGIT DIGIT DIGIT DIGIT '-' DIGIT DIGIT '-' DIGIT DIGIT '\'';   // YYYY-MM-DD
+TIME: '\'' DIGIT DIGIT ':' DIGIT DIGIT ':' DIGIT DIGIT '\'';                // HH:MM:SS
 
 // -----------------------------------------------------------------------------
 // Tokens básicos

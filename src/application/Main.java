@@ -10,6 +10,7 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
+import javafx.scene.text.Font;
 import java.io.*;
 import java.util.stream.Collectors;
 
@@ -33,29 +34,37 @@ public class Main extends Application {
     private TextArea errorsArea = new TextArea();
     private TextArea lineNumbers = new TextArea();
     private File currentFile = null;
+    
+    private DBConnect db = new DBConnect();
 
     @Override
-    public void start(Stage primaryStage) {
+    public void start(Stage primaryStage) throws ClassNotFoundException {
         // Configuración del terminal (solo lectura)
         terminalArea.setEditable(false);
         terminalArea.setStyle("-fx-background-color: #f4f4f4;");
         terminalArea.setPrefWidth(700);
+        terminalArea.setWrapText(true);
+        terminalArea.setFont(Font.font("FiraCode Nerd Font", 12)); // Fuente monoespaciada, tamaño 14
+
 
         errorsArea.setEditable(false);
         errorsArea.setStyle("-fx-background-color: #f4f4f4;");
         errorsArea.setPrefWidth(600);
+        errorsArea.setFont(Font.font("FiraCode Nerd Font", 12)); // Fuente monoespaciada, tamaño 14
 
         // Configuración de los números de línea
         lineNumbers.setEditable(false);
         lineNumbers.setStyle("-fx-background-color: #eaeaea; -fx-text-fill: #555;");
         lineNumbers.setPrefWidth(30);
         lineNumbers.setId("line-numbers");
+        lineNumbers.setFont(Font.font("FiraCode Nerd Font", 12)); // Fuente monoespaciada, tamaño 14
 
         // Sincronizar el número de líneas con el área de texto
         textArea.requestFocus();
         textArea.textProperty().addListener((_, _, newText) -> updateLineNumbers(newText));
         textArea.scrollTopProperty().addListener((_, _, newVal) -> lineNumbers.setScrollTop(newVal.doubleValue()));
-        
+        textArea.setFont(Font.font("FiraCode Nerd Font", 12)); // Fuente monoespaciada, tamaño 14
+
         // Menú de archivom
         Menu fileMenu = new Menu("Archivo");
         MenuItem openItem = new MenuItem("Abrir (ctrl+o)");
@@ -77,7 +86,7 @@ public class Main extends Application {
         exitItem.setOnAction(_ -> primaryStage.close());
         compileItem.setOnAction(_ -> {
 			try {
-				executeFile(primaryStage);
+				compileFile(primaryStage);
 			} catch (IOException | RecognitionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -96,7 +105,7 @@ public class Main extends Application {
         SplitPane splitTerminal = new SplitPane();
         splitTerminal.setOrientation(javafx.geometry.Orientation.HORIZONTAL);
         splitTerminal.getItems().addAll(terminalArea, errorsArea);
-        splitTerminal.setDividerPositions(0.5);
+        splitTerminal.setDividerPositions(0.7);
         
         HBox outputContainer = new HBox(splitTerminal);
         HBox.setHgrow(terminalArea, Priority.ALWAYS);
@@ -136,10 +145,19 @@ public class Main extends Application {
     		new KeyCodeCombination(KeyCode.P, KeyCombination.CONTROL_DOWN),
     		() -> {
 				try {
-					executeFile(primaryStage);
+					compileFile(primaryStage);
 				} catch (IOException | RecognitionException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
+				}
+			}
+		);
+        
+        scene.getAccelerators().put(
+    		new KeyCodeCombination(KeyCode.R, KeyCombination.CONTROL_DOWN),
+    		() -> {
+				for(String s : terminalArea.getText().split("-- =====================")) {
+					errorsArea.appendText(db.executeQuery(s));
 				}
 			}
 		);
@@ -166,9 +184,9 @@ public class Main extends Application {
                 textArea.setText(content);
                 updateLineNumbers(content);
                 currentFile = file;
-                terminalArea.appendText("\t\nArchivo cargado: " + file.getName() + "\n\n");
+//                terminalArea.appendText("\t\nArchivo cargado: " + file.getName() + "\n\n");
             } catch (IOException e) {
-                terminalArea.appendText("\t\nError al abrir el archivo\n\n");
+//                terminalArea.appendText("\t\nError al abrir el archivo\n\n");
                 e.printStackTrace();
             }
         }
@@ -188,14 +206,15 @@ public class Main extends Application {
         
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(currentFile))) {
             writer.write(textArea.getText());
-            terminalArea.appendText("\t\nArchivo guardado: " + currentFile.getName() + "\n\n");        } 
+//            terminalArea.appendText("\t\nArchivo guardado: " + currentFile.getName() + "\n\n");        
+            } 
         catch (IOException e) {
-            terminalArea.appendText("\t\n\nError al guardar el archivo\n\n");
+//            terminalArea.appendText("\t\n\nError al guardar el archivo\n\n");
             e.printStackTrace();
         }
     }
     
-    private void executeFile(Stage stage) throws UnsupportedEncodingException, RecognitionException, IOException {
+    private void compileFile(Stage stage) throws UnsupportedEncodingException, RecognitionException, IOException {
     	CharStream input = null;
     	String s = textArea.getText();
 //    		input = CharStreams.fromFileName(currentFile.getAbsolutePath());
@@ -209,6 +228,9 @@ public class Main extends Application {
     	parser.prog();
     	clearTerminal(stage);
     	terminalArea.appendText(parser.getCompiled());
+    	for(String str : parser.getCompiled().split("-- =====================")) {
+    		System.out.println(str);
+    	}
     	errorsArea.appendText(parser.getErrors());
     }
     

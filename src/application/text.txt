@@ -18,8 +18,8 @@ termina la tabla
 inserta en la tabla mitabla
   nombre con valor 'Obed'
   edad con valor 21
-  fechaNacimiento con valor 2003-09-14
-  reloj con valor 15:00:00
+  fechaNacimiento con valor '2003-09-14'
+  reloj con valor '15:00:00'
   ast con valor 'oiets'
 termina la insercion
 
@@ -39,7 +39,7 @@ borra de la tabla mitabla cuando el campo nombre sea igual a 'Obed'
 modifica de la tabla mitabla
   nombre con 'OGH',
   ast con 1,
-  oen con 1010-10-10
+  oen con '1010-10-10'
 cuando el campo edad sea igual a 21
 
 termina la base de datos ogh
