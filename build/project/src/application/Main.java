@@ -42,9 +42,9 @@ public class Main extends Application {
         // Configuración del terminal (solo lectura)
         terminalArea.setEditable(false);
         terminalArea.setStyle("-fx-background-color: #f4f4f4;");
-        terminalArea.setFont(Font.font("FiraCode Nerd Font", 12)); // Fuente monoespaciada, tamaño 14
         terminalArea.setPrefWidth(700);
         terminalArea.setWrapText(true);
+        terminalArea.setFont(Font.font("FiraCode Nerd Font", 12)); // Fuente monoespaciada, tamaño 14
 
 
         errorsArea.setEditable(false);
