@@ -12,6 +12,7 @@ import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.scene.text.Font;
 import java.io.*;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 //import org.antlr.runtime.ANTLRInputStream;
@@ -65,7 +66,7 @@ public class Main extends Application {
         textArea.scrollTopProperty().addListener((_, _, newVal) -> lineNumbers.setScrollTop(newVal.doubleValue()));
         textArea.setFont(Font.font("FiraCode Nerd Font", 12)); // Fuente monoespaciada, tamaño 14
 
-        // Menú de archivom
+        // Menú de archivo
         Menu fileMenu = new Menu("Archivo");
         MenuItem openItem = new MenuItem("Abrir (ctrl+o)");
         MenuItem saveItem = new MenuItem("Guardar (ctrl+s)");
@@ -229,8 +230,28 @@ public class Main extends Application {
     	clearTerminal(stage);
     	terminalArea.appendText(parser.getCompiled());
     	for(String str : parser.getCompiled().split("-- =====================")) {
-    		System.out.println(str);
+    		//System.out.println(str);
     	}
+    	
+    	@SuppressWarnings("rawtypes")
+		HashMap baseDatos = parser.baseDatos;
+    	System.out.println("Hashmap from the parser:-----------------------------------");
+    	for(Object key: baseDatos.keySet()) {
+    		System.out.println(key);
+    		BaseDatos db = (BaseDatos) baseDatos.get(key);
+    		for(BDTabla t : db.getTablas()) {
+    			System.out.print("\t");
+				
+    			System.out.println(t.getNombreTabla());
+    			for(BDCampo c : t.getCampos()) {
+    				System.out.print("\t\t");
+    				
+    				System.out.println(c.getNombreCampo());
+    			}
+    		}
+    	}
+    	System.out.println("-----------------------------------------------------------");
+    	
     	errorsArea.appendText(parser.getErrors());
     }
     
