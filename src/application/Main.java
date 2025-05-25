@@ -193,6 +193,7 @@ public class Main extends Application {
         	            BDTabla tabla = (BDTabla) newValue.getValue();
         	            // Hacer algo con la tabla seleccionada
         	            terminalArea.appendText("Seleccionada tabla: " + tabla.getNombreTabla() + "\n");
+        	            
         	        }
         	    }
         	);
@@ -258,8 +259,6 @@ public class Main extends Application {
     	
     	parser.prog();
     	clearTerminal(stage);
-//    	terminalArea.appendText(parser.getCompiled());
-    	
     	rootTreeItem.getChildren().clear();
 
     	@SuppressWarnings("rawtypes")

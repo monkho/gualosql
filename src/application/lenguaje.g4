@@ -255,6 +255,8 @@ createTableStmt
             int li = query.lastIndexOf(",");
             query = query.substring(0, query.length()-1);
             query += ");";
+            
+            tablaActual.setQuery(query);
 
             printQuery(query);
             compiled.add(query);

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 public class BDTabla {
   private String nombreTabla;
   private List<BDCampo> campos;
+  private String query;
 
   public BDTabla() {
     nombreTabla = "";
@@ -55,6 +56,14 @@ public class BDTabla {
       }
     }
     return fk;
+  }
+  
+  public void setQuery(String query) {
+	  this.query = query;
+  }
+  
+  public String getQuery() {
+	  return query;
   }
 
   public String toString() {
