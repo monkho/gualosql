@@ -59,7 +59,8 @@ public class BaseDatos {
     return null;
   }
 
-  public String toString() {
+  @SuppressWarnings("unused")
+public String toString() {
     String s = "Base de datos: " + nombreDB + "\n";
 
     for (BDTabla tabla : tablas) {

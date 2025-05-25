@@ -57,15 +57,8 @@ public class BDTabla {
     }
     return fk;
   }
-  
-  public void setQuery(String query) {
-	  this.query = query;
-  }
-  
-  public String getQuery() {
-	  return query;
-  }
 
+  @SuppressWarnings("unused")
   public String toString() {
     String s = "\tTabla: " + nombreTabla + '\n';
     for (BDCampo campo : campos) {

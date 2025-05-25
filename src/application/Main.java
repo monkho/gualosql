@@ -11,24 +11,16 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.scene.text.Font;
+
 import java.io.*;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.stream.Collectors;
 
-//import org.antlr.runtime.ANTLRInputStream;
-//import org.antlr.runtime.CommonTokenStream;
-//import org.antlr.runtime.RecognitionException;
-//import org.antlr.runtime.TokenSource;
-//import org.antlr.runtime.TokenStream;
 import org.antlr.v4.runtime.CharStream;
-//import org.antlr.v4.runtime.ANTLRInputStream;  // Reemplazado por CharStreams (ver nota abajo)
 import org.antlr.v4.runtime.CharStreams;       // Nueva forma de manejar input
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.TokenSource;
-//import org.antlr.v4.runtime.TokenStream;
 
 
 public class Main extends Application {
@@ -52,12 +44,13 @@ public class Main extends Application {
         terminalArea.setFont(Font.font("FiraCode Nerd Font", 12)); // Fuente monoespaciada, tamaño 14
         terminalArea.setPrefWidth(700);
         terminalArea.setWrapText(true);
-
+        terminalArea.getStyleClass().add("mfx-text-area");
 
         errorsArea.setEditable(false);
         errorsArea.setStyle("-fx-background-color: #f4f4f4;");
         errorsArea.setPrefWidth(600);
         errorsArea.setFont(Font.font("FiraCode Nerd Font", 12)); // Fuente monoespaciada, tamaño 14
+        errorsArea.getStyleClass().add("mfx-text-area");
 
         // Configuración de los números de línea
         lineNumbers.setEditable(false);
@@ -71,6 +64,10 @@ public class Main extends Application {
         textArea.textProperty().addListener((_, _, newText) -> updateLineNumbers(newText));
         textArea.scrollTopProperty().addListener((_, _, newVal) -> lineNumbers.setScrollTop(newVal.doubleValue()));
         textArea.setFont(Font.font("FiraCode Nerd Font", 12)); // Fuente monoespaciada, tamaño 14
+        textArea.getStyleClass().add("mfx-text-area"); // Custom CSS class
+
+        
+
 
         // Menú de archivo
         Menu fileMenu = new Menu("Archivo");
@@ -108,11 +105,6 @@ public class Main extends Application {
         HBox.setHgrow(textArea, Priority.ALWAYS);
         HBox.setHgrow(lineNumbers, Priority.NEVER);
 
-//        SplitPane splitTerminal = new SplitPane();
-//        splitTerminal.setOrientation(javafx.geometry.Orientation.HORIZONTAL);
-//        splitTerminal.getItems().addAll(terminalArea, errorsArea);
-//        splitTerminal.setDividerPositions(0.7);
-        
         // Added TreeView
         rootTreeItem = new TreeItem<>("Bases de Datos");
         rootTreeItem.setExpanded(true);
@@ -188,18 +180,32 @@ public class Main extends Application {
         	        if (newValue != null && newValue.getValue() instanceof BaseDatos) {
         	            BaseDatos db = (BaseDatos) newValue.getValue();
         	            // Hacer algo con la base de datos seleccionada
-        	            terminalArea.appendText("Seleccionada BD: " + db.getNombreDB() + "\n");
+        	            errorsArea.appendText("Seleccionada BD: " + db.getNombreDB() + "\n");
         	        } else if (newValue != null && newValue.getValue() instanceof BDTabla) {
         	            BDTabla tabla = (BDTabla) newValue.getValue();
         	            // Hacer algo con la tabla seleccionada
-        	            terminalArea.appendText("Seleccionada tabla: " + tabla.getNombreTabla() + "\n");
+        	            errorsArea.appendText("Seleccionada tabla: " + tabla.getNombreTabla() + "\n");
         	            
         	        }
         	    }
         	);
         
+        databaseTreeView.setOnMouseClicked(event -> {
+        	if(event.getClickCount() == 2) {
+        		TreeItem<Object> tableSelected = databaseTreeView.getSelectionModel().getSelectedItem();
+        		if(tableSelected != null && tableSelected.getValue() instanceof BDTabla) {
+        			CodeGenerated viewTable = new CodeGenerated((BDTabla) tableSelected.getValue());
+        			try {
+						viewTable.start(new Stage());
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+        		}
+        	}
+        });
+        
 		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
-        primaryStage.setTitle("Editor de Texto Simple");
+        primaryStage.setTitle("Generador de Codigo");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -259,6 +265,7 @@ public class Main extends Application {
     	
     	parser.prog();
     	clearTerminal(stage);
+    	terminalArea.appendText(parser.getCompiled());
     	rootTreeItem.getChildren().clear();
 
     	@SuppressWarnings("rawtypes")
