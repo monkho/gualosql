@@ -46,7 +46,7 @@ public class BDCampo {
     // valores.set(valores.indexOf(oldValor), newValor);
   }
 
-  public List<String> getValor() {
+  public List<String> getValores() {
     return valores;
   }
 

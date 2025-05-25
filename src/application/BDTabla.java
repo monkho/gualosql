@@ -63,6 +63,6 @@ public class BDTabla {
       if (campo != null)
         s += '\t' + campo.toString();
     }
-    return s;
+    return this.nombreTabla;
   }
 }

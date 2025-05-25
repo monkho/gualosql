@@ -12,7 +12,9 @@ import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.scene.text.Font;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 
 //import org.antlr.runtime.ANTLRInputStream;
@@ -35,6 +37,10 @@ public class Main extends Application {
     private TextArea errorsArea = new TextArea();
     private TextArea lineNumbers = new TextArea();
     private File currentFile = null;
+
+
+	private TreeView<Object> databaseTreeView; // Object para manejar diferentes tipos
+	private TreeItem<Object> rootTreeItem;
     
     private DBConnect db = new DBConnect();
 
@@ -89,7 +95,6 @@ public class Main extends Application {
 			try {
 				compileFile(primaryStage);
 			} catch (IOException | RecognitionException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		});
@@ -103,16 +108,27 @@ public class Main extends Application {
         HBox.setHgrow(textArea, Priority.ALWAYS);
         HBox.setHgrow(lineNumbers, Priority.NEVER);
 
+//        SplitPane splitTerminal = new SplitPane();
+//        splitTerminal.setOrientation(javafx.geometry.Orientation.HORIZONTAL);
+//        splitTerminal.getItems().addAll(terminalArea, errorsArea);
+//        splitTerminal.setDividerPositions(0.7);
+        
+        // Added TreeView
+        rootTreeItem = new TreeItem<>("Bases de Datos");
+        rootTreeItem.setExpanded(true);
+        databaseTreeView = new TreeView<>(rootTreeItem);
+        databaseTreeView.setPrefWidth(250);
+
         SplitPane splitTerminal = new SplitPane();
         splitTerminal.setOrientation(javafx.geometry.Orientation.HORIZONTAL);
-        splitTerminal.getItems().addAll(terminalArea, errorsArea);
-        splitTerminal.setDividerPositions(0.7);
+        splitTerminal.getItems().addAll(databaseTreeView, terminalArea, errorsArea);
+        splitTerminal.setDividerPositions(0.3, 0.65); // Ajustar proporciones para 3 paneles
         
         HBox outputContainer = new HBox(splitTerminal);
         HBox.setHgrow(terminalArea, Priority.ALWAYS);
         HBox.setHgrow(errorsArea, Priority.ALWAYS);
         
-     // SplitPane para ajustar tamaños dinámicamente
+        // SplitPane para ajustar tamaños dinámicamente
         SplitPane splitPane = new SplitPane();
         splitPane.setOrientation(javafx.geometry.Orientation.VERTICAL);
         splitPane.getItems().addAll(textContainer, outputContainer);
@@ -148,7 +164,6 @@ public class Main extends Application {
 				try {
 					compileFile(primaryStage);
 				} catch (IOException | RecognitionException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -167,6 +182,20 @@ public class Main extends Application {
     		new KeyCodeCombination(KeyCode.C, KeyCombination.ALT_DOWN, KeyCombination.CONTROL_DOWN), 
     		() -> clearTerminal(primaryStage)
 		);
+        
+        databaseTreeView.getSelectionModel().selectedItemProperty().addListener(
+        	    (_, _, newValue) -> {
+        	        if (newValue != null && newValue.getValue() instanceof BaseDatos) {
+        	            BaseDatos db = (BaseDatos) newValue.getValue();
+        	            // Hacer algo con la base de datos seleccionada
+        	            terminalArea.appendText("Seleccionada BD: " + db.getNombreDB() + "\n");
+        	        } else if (newValue != null && newValue.getValue() instanceof BDTabla) {
+        	            BDTabla tabla = (BDTabla) newValue.getValue();
+        	            // Hacer algo con la tabla seleccionada
+        	            terminalArea.appendText("Seleccionada tabla: " + tabla.getNombreTabla() + "\n");
+        	        }
+        	    }
+        	);
         
 		scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
         primaryStage.setTitle("Editor de Texto Simple");
@@ -216,9 +245,10 @@ public class Main extends Application {
     }
     
     private void compileFile(Stage stage) throws UnsupportedEncodingException, RecognitionException, IOException {
+    	
     	CharStream input = null;
     	String s = textArea.getText();
-//    		input = CharStreams.fromFileName(currentFile.getAbsolutePath());
+    	
 		input = CharStreams.fromString(s);
     	
     	lenguajeLexer lexer = new lenguajeLexer(input);
@@ -228,29 +258,26 @@ public class Main extends Application {
     	
     	parser.prog();
     	clearTerminal(stage);
-    	terminalArea.appendText(parser.getCompiled());
-    	for(String str : parser.getCompiled().split("-- =====================")) {
-    		//System.out.println(str);
-    	}
+//    	terminalArea.appendText(parser.getCompiled());
     	
+    	rootTreeItem.getChildren().clear();
+
     	@SuppressWarnings("rawtypes")
-		HashMap baseDatos = parser.baseDatos;
-    	System.out.println("Hashmap from the parser:-----------------------------------");
-    	for(Object key: baseDatos.keySet()) {
-    		System.out.println(key);
-    		BaseDatos db = (BaseDatos) baseDatos.get(key);
-    		for(BDTabla t : db.getTablas()) {
-    			System.out.print("\t");
-				
-    			System.out.println(t.getNombreTabla());
-    			for(BDCampo c : t.getCampos()) {
-    				System.out.print("\t\t");
-    				
-    				System.out.println(c.getNombreCampo());
-    			}
-    		}
+    	HashMap baseDatos = parser.baseDatos;
+    	for(Object key: baseDatos.keySet()) {    		
+    	    BaseDatos db = (BaseDatos) baseDatos.get(key);
+
+    	    TreeItem<Object> treeDB = new TreeItem<>(db);
+    	    treeDB.setExpanded(true);
+    	    
+    	    for(BDTabla t : db.getTablas()) {
+    	        TreeItem<Object> treeTable = new TreeItem<>(t);
+    	        treeDB.getChildren().add(treeTable);
+    	    }
+    	    
+    	    // Agregar cada base de datos como hijo del root
+    	    rootTreeItem.getChildren().add(treeDB);
     	}
-    	System.out.println("-----------------------------------------------------------");
     	
     	errorsArea.appendText(parser.getErrors());
     }

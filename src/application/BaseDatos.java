@@ -66,7 +66,7 @@ public class BaseDatos {
       if (tabla != null)
         s += tabla.toString();
     }
-    return s;
+    return this.nombreDB;
   }
 
 }
