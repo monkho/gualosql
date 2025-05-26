@@ -66,9 +66,6 @@ public class Main extends Application {
         textArea.setFont(Font.font("FiraCode Nerd Font", 12)); // Fuente monoespaciada, tamaño 14
         textArea.getStyleClass().add("mfx-text-area"); // Custom CSS class
 
-        
-
-
         // Menú de archivo
         Menu fileMenu = new Menu("Archivo");
         MenuItem openItem = new MenuItem("Abrir (ctrl+o)");
