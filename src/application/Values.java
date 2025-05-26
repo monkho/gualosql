@@ -1,5 +1,6 @@
 package application;
 
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,7 @@ import javafx.stage.Stage;
 
 public class Values extends Application {
     private VBox layout;
+    private BaseDatos db;
     private BDTabla tabla;
     
     // Lista para mantener referencia a los campos de entrada
@@ -27,23 +29,29 @@ public class Values extends Application {
     private boolean isEditMode = false;
     private List<String> currentValues;
     private int editRowIndex;
+
+    private DBConnect connection = new DBConnect();
     
     private Runnable onCloseCallback;
 
     // Constructor para nuevo registro
-    public Values(BDTabla tabla) {
+    public Values(BaseDatos db, BDTabla tabla) {
         layout = new VBox(10);
         layout.setPadding(new Insets(20));
         inputFields = new ArrayList<>();
+        
+        this.db = db;
         this.tabla = tabla;
         this.isEditMode = false;
     }
     
     // Constructor para editar registro existente
-    public Values(BDTabla tabla, List<String> currentValues, int rowIndex) {
+    public Values(BaseDatos db, BDTabla tabla, List<String> currentValues, int rowIndex) {
         layout = new VBox(10);
         layout.setPadding(new Insets(20));
         inputFields = new ArrayList<>();
+        
+        this.db = db;
         this.tabla = tabla;
         this.currentValues = currentValues;
         this.editRowIndex = rowIndex;
@@ -68,6 +76,21 @@ public class Values extends Application {
             String currentValue = "";
             if (isEditMode && currentValues != null && i < currentValues.size()) {
                 currentValue = currentValues.get(i);
+            }
+            if(c.getNombreCampo() == tabla.getForeingKey()) {
+            	String id = (c.getValores().size()>0) ? c.getValores().get(c.getValores().size()-1) : "1";
+            	int intid = Integer.parseInt(id);
+                inputField = new Spinner<>(0, 999999, intid++);
+                
+                if (isEditMode && !currentValue.isEmpty()) {
+                    try {
+                        ((Spinner) inputField).getValueFactory().setValue(Integer.parseInt(currentValue));
+                    } catch (NumberFormatException e) {
+                        System.out.println("Error al parsear número: " + currentValue);
+                    }
+                }
+                
+                layout.getChildren().add((Spinner) inputField);
             }
             
             switch(c.getNombreTipo()) {
@@ -156,7 +179,7 @@ public class Values extends Application {
 
         Button acceptButton = new Button(isEditMode ? "Actualizar" : "Aceptar");
         acceptButton.setOnAction((_) -> {
-            String values = isEditMode ? "Valores actualizados:\n" : "Valores agregados:\n";
+            String values = "(";
             
             // Ahora usar la lista de inputFields en lugar de layout.getChildren()
             for(int i = 0; i < campos.size() && i < inputFields.size(); i++) {
@@ -165,7 +188,7 @@ public class Values extends Application {
 
                 if(input instanceof TextField) {
                     String v = ((TextField) input).getText();
-                    values += "\tTexto: " + v;
+                    values += "'" + v + "',";
                     
                     if (isEditMode) {
                         // Actualizar valor existente
@@ -180,7 +203,7 @@ public class Values extends Application {
                 else if(input instanceof DatePicker) {
                     LocalDate date = ((DatePicker) input).getValue();
                     String v = (date != null) ? date.toString() : "";
-                    values += "\tFecha: " + v;
+                    values += "'" + v + "',";
                     
                     if (isEditMode) {
                         // Actualizar valor existente
@@ -194,7 +217,7 @@ public class Values extends Application {
                 }
                 else if(input instanceof Spinner) {
                     String v = ((Spinner) input).getValue().toString();
-                    values += "\tNumero: " + v;
+                    values += v + ",";
                     
                     if (isEditMode) {
                         // Actualizar valor existente
@@ -206,10 +229,27 @@ public class Values extends Application {
                         campo.addValor(v);
                     }
                 }
-                values += "\n";
             }
-            System.out.println(values);
-         // Ejecutar callback si existe
+            values = values.substring(0, values.length()-1);
+            values += ")";
+            
+            try {
+            	String fields = "(";
+            	for(BDCampo c : tabla.getCampos()) {
+            		fields += c.getNombreCampo() + ",";
+            	}
+
+                fields = fields.substring(0, fields.length()-1);
+                fields += ')';
+            	String query = "INSERT INTO " + tabla.getNombreTabla() + fields + " VALUES" + values;
+            	System.out.println(query);
+				connection.insertTable(query, db.getNombreDB());
+			} catch (ClassNotFoundException | SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+            
+        	// Ejecutar callback si existe
             if (onCloseCallback != null) {
                 onCloseCallback.run();
             }

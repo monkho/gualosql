@@ -123,6 +123,18 @@ public class DBConnect {
 		return "";
 	}
 	
+	public void createDataBase(String query) throws SQLException, ClassNotFoundException {
+		open();
+		
+		try {
+			stmt.executeUpdate(query);
+		} catch(SQLException e) {
+			System.out.println("EXCEPTION CAUGHT (CreatingDB): ");
+			e.printStackTrace();
+		}
+		
+		close();
+	}
 	public void createDB(String query) throws SQLException, ClassNotFoundException {
 		open();
 		this.db = query.split("\n")[2].split(" ")[5];

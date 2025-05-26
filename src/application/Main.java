@@ -13,6 +13,7 @@ import javafx.stage.FileChooser;
 import javafx.scene.text.Font;
 
 import java.io.*;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
@@ -34,7 +35,7 @@ public class Main extends Application {
 	private TreeView<Object> databaseTreeView; // Object para manejar diferentes tipos
 	private TreeItem<Object> rootTreeItem;
     
-    private DBConnect db = new DBConnect();
+    private DBConnect connection = new DBConnect();
 
     @Override
     public void start(Stage primaryStage) throws ClassNotFoundException {
@@ -110,11 +111,11 @@ public class Main extends Application {
 
         SplitPane splitTerminal = new SplitPane();
         splitTerminal.setOrientation(javafx.geometry.Orientation.HORIZONTAL);
-        splitTerminal.getItems().addAll(databaseTreeView, terminalArea, errorsArea);
+        splitTerminal.getItems().addAll(databaseTreeView, errorsArea);
         splitTerminal.setDividerPositions(0.3, 0.65); // Ajustar proporciones para 3 paneles
         
         HBox outputContainer = new HBox(splitTerminal);
-        HBox.setHgrow(terminalArea, Priority.ALWAYS);
+        HBox.setHgrow(databaseTreeView, Priority.ALWAYS);
         HBox.setHgrow(errorsArea, Priority.ALWAYS);
         
         // SplitPane para ajustar tamaños dinámicamente
@@ -162,7 +163,7 @@ public class Main extends Application {
     		new KeyCodeCombination(KeyCode.R, KeyCombination.CONTROL_DOWN),
     		() -> {
 				for(String s : terminalArea.getText().split("-- =====================")) {
-					errorsArea.appendText(db.executeQuery(s));
+					errorsArea.appendText(connection.executeQuery(s));
 				}
 			}
 		);
@@ -190,8 +191,13 @@ public class Main extends Application {
         databaseTreeView.setOnMouseClicked(event -> {
         	if(event.getClickCount() == 2) {
         		TreeItem<Object> tableSelected = databaseTreeView.getSelectionModel().getSelectedItem();
-        		if(tableSelected != null && tableSelected.getValue() instanceof BDTabla) {
-        			CodeGenerated viewTable = new CodeGenerated((BDTabla) tableSelected.getValue());
+        		BaseDatos db = null;
+        		if(tableSelected.getValue() instanceof BaseDatos) {
+        			db = (BaseDatos) tableSelected.getParent().getValue();
+        		}
+        		
+        		if(db != null && tableSelected != null && tableSelected.getValue() instanceof BDTabla) {
+        			CodeGenerated viewTable = new CodeGenerated(db, (BDTabla) tableSelected.getValue());
         			try {
 						viewTable.start(new Stage());
 					} catch (Exception e) {
@@ -218,9 +224,9 @@ public class Main extends Application {
                 textArea.setText(content);
                 updateLineNumbers(content);
                 currentFile = file;
-//                terminalArea.appendText("\t\nArchivo cargado: " + file.getName() + "\n\n");
+                terminalArea.appendText("\t\nArchivo cargado: " + file.getName() + "\n\n");
             } catch (IOException e) {
-//                terminalArea.appendText("\t\nError al abrir el archivo\n\n");
+                terminalArea.appendText("\t\nError al abrir el archivo\n\n");
                 e.printStackTrace();
             }
         }
@@ -240,10 +246,10 @@ public class Main extends Application {
         
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(currentFile))) {
             writer.write(textArea.getText());
-//            terminalArea.appendText("\t\nArchivo guardado: " + currentFile.getName() + "\n\n");        
+            terminalArea.appendText("\t\nArchivo guardado: " + currentFile.getName() + "\n\n");        
             } 
         catch (IOException e) {
-//            terminalArea.appendText("\t\n\nError al guardar el archivo\n\n");
+            terminalArea.appendText("\t\n\nError al guardar el archivo\n\n");
             e.printStackTrace();
         }
     }
@@ -262,19 +268,56 @@ public class Main extends Application {
     	
     	parser.prog();
     	clearTerminal(stage);
-    	terminalArea.appendText(parser.getCompiled());
+//    	terminalArea.appendText(parser.getCompiled());
     	rootTreeItem.getChildren().clear();
 
     	@SuppressWarnings("rawtypes")
     	HashMap baseDatos = parser.baseDatos;
     	for(Object key: baseDatos.keySet()) {    		
     	    BaseDatos db = (BaseDatos) baseDatos.get(key);
+    	    
+    	    String query = "CREATE DATABASE IF NOT EXISTS " + db.getNombreDB();
+    	    try {
+				connection.createDataBase(query);
+			} catch (ClassNotFoundException | SQLException e) {
+				e.printStackTrace();
+			}
 
     	    TreeItem<Object> treeDB = new TreeItem<>(db);
     	    treeDB.setExpanded(true);
     	    
     	    for(BDTabla t : db.getTablas()) {
     	        TreeItem<Object> treeTable = new TreeItem<>(t);
+
+    	        String fields = "(";
+    	        fields += t.getIdTabla() + " INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ";
+    	        for(BDCampo c : t.getCampos()) {
+    	        	switch(c.getNombreTipo()) {
+	                    case "texto":
+	                    	fields += c.getNombreCampo() + " TEXT,";
+	                        break;
+	                    case "numero":
+	                    	fields += c.getNombreCampo() + " INT,";
+	                        break;
+	                    case "fecha":
+	                    	fields += c.getNombreCampo() + " DATE,";
+	                        break;
+	                    case "tiempo":
+	                    	fields += c.getNombreCampo() + " TIME,";
+	                        break;
+    	        	}
+    	        }
+
+    	        fields = fields.substring(0, fields.length()-1) + ")";
+    	        
+	        	query = "CREATE TABLE IF NOT EXISTS " + t.getNombreTabla() + fields;
+	        	System.out.println(query);
+    	        try {
+					connection.createTable(query, db.getNombreDB());
+				} catch (ClassNotFoundException | SQLException e) {
+					e.printStackTrace();
+				}
+    	        
     	        treeDB.getChildren().add(treeTable);
     	    }
     	    

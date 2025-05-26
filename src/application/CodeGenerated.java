@@ -1,14 +1,18 @@
 package application;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
@@ -18,16 +22,20 @@ import javafx.stage.Stage;
 
 public class CodeGenerated extends Application {
     private VBox layout;
+    private BaseDatos db;
     private BDTabla table;
     private List<BDCampo> campos;
     private TableView<List<String>> tableContent = new TableView<>();
 
+    private DBConnect connection = new DBConnect();
+    
     public CodeGenerated() {}
 
-    public CodeGenerated(BDTabla table) {
+    public CodeGenerated(BaseDatos db, BDTabla table) {
         layout = new VBox(10);
         layout.setPadding(new Insets(20));
 
+        this.db = db;
         this.table = table;
         this.campos = this.table.getCampos();
 
@@ -99,7 +107,7 @@ public class CodeGenerated extends Application {
     }
 
     public void newField(BDTabla table, Stage stage) {
-        Values valuesWindow = new Values(table);
+        Values valuesWindow = new Values(db, table);
         valuesWindow.setOnCloseCallback(() -> refreshTable());
         try {
             valuesWindow.start(new Stage());
@@ -119,7 +127,7 @@ public class CodeGenerated extends Application {
             }
         }
         
-        Values valuesWindow = new Values(table, currentValues, rowIndex);
+        Values valuesWindow = new Values(db, table, currentValues, rowIndex);
         valuesWindow.setOnCloseCallback(() -> refreshTable());
         try {
             valuesWindow.start(new Stage());
@@ -169,21 +177,44 @@ public class CodeGenerated extends Application {
             int selectedIndex = tableContent.getSelectionModel().getSelectedIndex();
             
             if (selectedIndex >= 0) {
-                // Eliminar valores de todos los campos en el índice seleccionado
-                for (BDCampo campo : campos) {
-                    if (campo.getValores() != null && selectedIndex < campo.getValores().size()) {
-                        campo.getValores().remove(selectedIndex);
+                // Crear diálogo de confirmación
+                Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+                confirmAlert.setTitle("Confirmar eliminación");
+                confirmAlert.setHeaderText("¿Está seguro de eliminar este registro?");
+                confirmAlert.setContentText("Esta acción no se puede deshacer.");
+                
+                Optional<ButtonType> result = confirmAlert.showAndWait();
+                
+                if (result.isPresent() && result.get() == ButtonType.OK) {
+
+                    try {
+						String id = tableContent.getSelectionModel().getSelectedItem().get(0);
+                    	String query = "DELETE FROM TABLE " + table.getNombreTabla() + " WHERE " + table.getIdTabla() + "=" + id.toString();
+                    	System.out.println(query);
+						connection.deleteFromTable(query, db.getNombreDB());
+					} catch (ClassNotFoundException | SQLException e) {
+						e.printStackTrace();
+					}
+                    
+                    // Eliminar valores de todos los campos en el índice seleccionado
+                    for (BDCampo campo : campos) {
+                        if (campo.getValores() != null && selectedIndex < campo.getValores().size()) {
+                            campo.getValores().remove(selectedIndex);
+                        }
                     }
+                    // Refrescar la tabla
+                    refreshTable();
+                    System.out.println("Registro eliminado en índice: " + selectedIndex);
                 }
-                // Refrescar la tabla
-                loadTableData();
-                System.out.println("Registro eliminado en índice: " + selectedIndex);
             } else {
-                System.out.println("No hay ninguna fila seleccionada para eliminar");
+                // Alerta para cuando no hay selección
+                Alert noSelectionAlert = new Alert(Alert.AlertType.WARNING);
+                noSelectionAlert.setTitle("Sin selección");
+                noSelectionAlert.setHeaderText("No hay registro seleccionado");
+                noSelectionAlert.setContentText("Por favor, seleccione un registro para eliminar.");
+                noSelectionAlert.showAndWait();
             }
-            refreshTable();
-        });
-        
+        });        
         // Asignar el menú contextual a la tabla
         tableContent.setContextMenu(contextMenu);
         
