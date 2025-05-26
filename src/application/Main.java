@@ -46,12 +46,14 @@ public class Main extends Application {
         terminalArea.setPrefWidth(700);
         terminalArea.setWrapText(true);
         terminalArea.getStyleClass().add("mfx-text-area");
+        terminalArea.getStyleClass().add("terminal");
 
         errorsArea.setEditable(false);
         errorsArea.setStyle("-fx-background-color: #f4f4f4;");
         errorsArea.setPrefWidth(600);
         errorsArea.setFont(Font.font("FiraCode Nerd Font", 12)); // Fuente monoespaciada, tamaño 14
         errorsArea.getStyleClass().add("mfx-text-area");
+        errorsArea.getStyleClass().add("errors");
 
         // Configuración de los números de línea
         lineNumbers.setEditable(false);
@@ -111,17 +113,17 @@ public class Main extends Application {
 
         SplitPane splitTerminal = new SplitPane();
         splitTerminal.setOrientation(javafx.geometry.Orientation.HORIZONTAL);
-        splitTerminal.getItems().addAll(databaseTreeView, errorsArea);
-        splitTerminal.setDividerPositions(0.3, 0.65); // Ajustar proporciones para 3 paneles
+        splitTerminal.getItems().addAll(textContainer, databaseTreeView);
+        splitTerminal.setDividerPositions(0.6, 0.4); // Ajustar proporciones para 3 paneles
         
-        HBox outputContainer = new HBox(splitTerminal);
-        HBox.setHgrow(databaseTreeView, Priority.ALWAYS);
+        HBox outputContainer = new HBox(errorsArea);
+//        HBox.setHgrow(databaseTreeView, Priority.ALWAYS);
         HBox.setHgrow(errorsArea, Priority.ALWAYS);
         
         // SplitPane para ajustar tamaños dinámicamente
         SplitPane splitPane = new SplitPane();
         splitPane.setOrientation(javafx.geometry.Orientation.VERTICAL);
-        splitPane.getItems().addAll(textContainer, outputContainer);
+        splitPane.getItems().addAll(splitTerminal, outputContainer);
         splitPane.setDividerPositions(0.7); // Inicialmente, 70% para el área de texto
 
         // Layout principal con márgenes
