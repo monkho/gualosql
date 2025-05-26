@@ -191,10 +191,7 @@ public class Main extends Application {
         databaseTreeView.setOnMouseClicked(event -> {
         	if(event.getClickCount() == 2) {
         		TreeItem<Object> tableSelected = databaseTreeView.getSelectionModel().getSelectedItem();
-        		BaseDatos db = null;
-        		if(tableSelected.getValue() instanceof BaseDatos) {
-        			db = (BaseDatos) tableSelected.getParent().getValue();
-        		}
+        		BaseDatos db = (BaseDatos) tableSelected.getParent().getValue();
         		
         		if(db != null && tableSelected != null && tableSelected.getValue() instanceof BDTabla) {
         			CodeGenerated viewTable = new CodeGenerated(db, (BDTabla) tableSelected.getValue());

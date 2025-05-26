@@ -14,6 +14,8 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -36,8 +38,9 @@ public class Values extends Application {
 
     // Constructor para nuevo registro
     public Values(BaseDatos db, BDTabla tabla) {
-        layout = new VBox(10);
-        layout.setPadding(new Insets(20));
+        layout = new VBox(15);  // Aumentar spacing
+        layout.setPadding(new Insets(30));
+        layout.getStyleClass().add("form-container");  // Agregar clase CSS
         inputFields = new ArrayList<>();
         
         this.db = db;
@@ -47,8 +50,9 @@ public class Values extends Application {
     
     // Constructor para editar registro existente
     public Values(BaseDatos db, BDTabla tabla, List<String> currentValues, int rowIndex) {
-        layout = new VBox(10);
-        layout.setPadding(new Insets(20));
+        layout = new VBox(15);  // Aumentar spacing
+        layout.setPadding(new Insets(30));
+        layout.getStyleClass().add("form-container");  // Agregar clase CSS
         inputFields = new ArrayList<>();
         
         this.db = db;
@@ -66,12 +70,23 @@ public class Values extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
 
+        Label formTitle = new Label(isEditMode ? "✏ Editar Registro" : "✚ Nuevo Registro");
+        formTitle.getStyleClass().add("form-title");
+        layout.getChildren().add(formTitle);
+
+        Region separator = new Region();
+        separator.getStyleClass().add("form-separator");
+        layout.getChildren().add(separator);
+        
         List<BDCampo> campos = tabla.getCampos();
         
         for(int i = 0; i < campos.size(); i++) {
             BDCampo c = campos.get(i);
             Object inputField = null;
-            layout.getChildren().addAll(new Label(c.getNombreCampo()));
+            
+            Label fieldLabel = new Label(c.getNombreCampo());
+            fieldLabel.getStyleClass().add("field-label");
+            layout.getChildren().add(fieldLabel);
             
             String currentValue = "";
             if (isEditMode && currentValues != null && i < currentValues.size()) {
@@ -81,6 +96,7 @@ public class Values extends Application {
             	String id = (c.getValores().size()>0) ? c.getValores().get(c.getValores().size()-1) : "1";
             	int intid = Integer.parseInt(id);
                 inputField = new Spinner<>(0, 999999, intid++);
+                ((Spinner) inputField).getStyleClass().add("spinner");
                 
                 if (isEditMode && !currentValue.isEmpty()) {
                     try {
@@ -99,6 +115,7 @@ public class Values extends Application {
                 	int intid = Integer.parseInt(id);
                 	
                     inputField = new Spinner<>(0, 999999, intid++);
+                    ((Spinner) inputField).getStyleClass().add("spinner");
                     
                     // Establecer valor actual si está en modo edición
                     if (isEditMode && !currentValue.isEmpty()) {
@@ -114,6 +131,7 @@ public class Values extends Application {
 
                 case "texto":
                     inputField = new TextField();
+                    ((TextField) inputField).getStyleClass().add("text-field");
                     
                     // Establecer valor actual si está en modo edición
                     if (isEditMode) {
@@ -126,6 +144,7 @@ public class Values extends Application {
                 case "numero":
                     inputField = new Spinner<>(0, 999999, 1);
                     ((Spinner) inputField).setEditable(true);
+                    ((Spinner) inputField).getStyleClass().add("spinner");
                     
                     // Establecer valor actual si está en modo edición
                     if (isEditMode && !currentValue.isEmpty()) {
@@ -147,6 +166,7 @@ public class Values extends Application {
                         try {
                             LocalDate date = LocalDate.parse(currentValue);
                             ((DatePicker) inputField).setValue(date);
+                            ((DatePicker) inputField).getStyleClass().add("date-picker");
                         } catch (Exception e) {
                             System.out.println("Error al parsear fecha: " + currentValue);
                         }
@@ -157,6 +177,7 @@ public class Values extends Application {
 
                 case "tiempo":
                     inputField = new TextField();
+                    ((TextField) inputField).getStyleClass().add("text-field");
                     
                     // Establecer valor actual si está en modo edición
                     if (isEditMode) {
@@ -177,10 +198,14 @@ public class Values extends Application {
             }
         }
 
-        Button acceptButton = new Button(isEditMode ? "Actualizar" : "Aceptar");
+        HBox buttonContainer = new HBox();
+        buttonContainer.getStyleClass().add("button-container");
+
+        Button acceptButton = new Button(isEditMode ? "💾 Actualizar" : "💾 Guardar");
+        acceptButton.getStyleClass().add("primary-button");
+        
         acceptButton.setOnAction((_) -> {
             String values = "(";
-            
             // Ahora usar la lista de inputFields en lugar de layout.getChildren()
             for(int i = 0; i < campos.size() && i < inputFields.size(); i++) {
                 Object input = inputFields.get(i);
@@ -256,9 +281,12 @@ public class Values extends Application {
             primaryStage.close();
         });
 
-        layout.getChildren().add(acceptButton);
+        buttonContainer.getChildren().add(acceptButton);
+        layout.getChildren().add(buttonContainer);
 
         Scene scene = new Scene(layout, 600, 400);
+        scene.getStylesheets().add(getClass().getResource("values_styles.css").toExternalForm());
+
         primaryStage.setTitle(isEditMode ? "Editar Valores" : "Nuevos Valores");
         primaryStage.setScene(scene);
         primaryStage.show();

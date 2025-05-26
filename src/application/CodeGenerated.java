@@ -14,6 +14,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -32,8 +33,9 @@ public class CodeGenerated extends Application {
     public CodeGenerated() {}
 
     public CodeGenerated(BaseDatos db, BDTabla table) {
-        layout = new VBox(10);
-        layout.setPadding(new Insets(20));
+        layout = new VBox(15);  // Aumentar spacing
+        layout.setPadding(new Insets(25));
+        layout.getStyleClass().add("main-container");  // Agregar clase CSS
 
         this.db = db;
         this.table = table;
@@ -138,10 +140,21 @@ public class CodeGenerated extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        Label titleLabel = new Label("Tabla: " + table.getNombreTabla());
+        titleLabel.getStyleClass().add("window-title");
+        layout.getChildren().add(0, titleLabel);  // Agregar al inicio
+        
         ButtonBar buttons = new ButtonBar();
+        buttons.getStyleClass().add("button-bar");
+        
         Button newButton = new Button("Insertar");
         Button editButton = new Button("Editar");
         Button refreshButton = new Button("Refrescar");
+
+        newButton.getStyleClass().add("modern-button");
+        editButton.getStyleClass().add("modern-button");
+        refreshButton.getStyleClass().add("modern-button");
+        tableContent.getStyleClass().add("table-view");
 
         editButton.setDisable(true);
         buttons.getButtons().addAll(newButton, editButton, refreshButton);
@@ -243,7 +256,10 @@ public class CodeGenerated extends Application {
         layout.getChildren().add(buttons);
 
         Scene scene = new Scene(layout, 900, 500);
-        primaryStage.setTitle("Tabla: " + table.getNombreTabla());
+        
+        scene.getStylesheets().add(getClass().getResource("codegenerated_styles.css").toExternalForm());
+
+        primaryStage.setTitle("Gestión de Datos");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
